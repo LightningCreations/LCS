@@ -23,7 +23,18 @@ Following the title but before any sections, there is an indication of the publi
 
 ### §2.1 Structure of an LCS Draft
 
-An LCS Draft, or LCSD is formatted similar to an LCS Document. In addition to the rules above, a Draft Section, labeled as D§_n_ may appear. These sections are part of the draft itself, rather than the specification, and are not expected to appear in the published LCS Document. Any Section labeled as §_n_ is expected to appear in the published LCS Document, and are called Standard Sections. If a Draft Section is changed to be expected to appear in the published LCS Document, a revision of the draft must be published with the Draft Section relabeled as a Standard Section. A subdivision of a Standard Section may be a Draft Section. In this case, the first layered subdivision which is not expected to appear in the published LCS Document has D prefix the number of that subdivision. The Standard Section at the previous layer is said to contain that Draft Section. It is impossible for a Draft Section to contain a Standard Section in this way. Instead of a publication date, a draft date is given. An LCS Draft which has a later draft date then any other LCS Draft with the same number from the same author 
+An LCS Draft, or LCSD is formatted similar to an LCS Document. 
+The title of an LCS Draft is composed of the name of the Author, followed by LCSD, followed by the number assigned by its author.
+In addition to the rules above, a Draft Section, labeled as D§_n_ may appear. 
+These sections are part of the draft itself, rather than the specification, and are not expected to appear in the published LCS Document. 
+Any Section labeled as §_n_ is expected to appear in the published LCS Document, and are called Standard Sections. 
+If a Draft Section is changed to be expected to appear in the published LCS Document, a revision of the draft must be published with the Draft Section relabeled as a Standard Section. 
+A subdivision of a Standard Section may be a Draft Section. 
+In this case, the first layered subdivision which is not expected to appear in the published LCS Document has D prefix the number of that subdivision. 
+The Standard Section at the previous layer is said to contain that Draft Section. 
+It is impossible for a Draft Section to contain a Standard Section in this way. 
+Instead of a publication date, a draft date is given to all LCS Drafts. 
+An LCS Draft which has a later draft date then any other LCS Draft with the same number from the same author supersedes all such LCS Drafts.
 
 
 ### §2.2 Structure of this Publication
