@@ -23,6 +23,10 @@ Undefined Behavior occurs in an LCIR program when a construct of LCIR is violate
 In such an occurance, no limitations are posed on the result of that violation by the LCIR Specification. 
 Cases where this occurs will be explicitly documented using the declarative wording "the behavior is undefined", or "the behavior of ... is undefined"
  
+### §1.4 Unspecified Behavior
+
+Unspecified Behavior is Behavior for which the implementation is given a choice on how to proceed.  
+ 
 ## §2 LCIR Syntax
 
 An LCIR file is a collection of several symbols, type declarations, functions, and pragma declarations. 
@@ -158,6 +162,119 @@ An Operation A *Observes the Result of* another Operation B, if at least one of 
 * Both A and B are Volatile Operations, and A *follows* B.
 * A is a Write Operation, B is a Read Operation, and A *is Computed by* B.
 * B is a Read Operation, A is a Write Operation, B and A *apply to the same memory region*, and A *follows* B. 
+* There exists some operation C, such that C *Observes the result of* B, and A *Observes the result of* C
+
+If An Operation A *Observes the Result of* another Operation B, then the following occurs:
+* If both A and B are Read Operations that apply to the same memory region, and A is not a volatile access, then A will load the same value as B, unless there exists some Write Operation C, such that B does not *Observe the result of* C, and A *Observes the result of* C.
+* If B is a Write Operation and A is a Read Operation that applies to the same memory region, and A is not a volatile access, then A will load the value stored by B, unless there exists some Write Operation C, such that C *Observes the result of* B, or C *is an Unreleated Write* to B, and A *Observes the result of * C.
+* Any Observable Side effects of A will have occurred before B.
+
+### §3.4 Unrelated Write To and Negates
+
+An Operation can be said to be an Unrelated Write to some other operation. 
+If this occurs, then those operations occur sequentially, and without a data race. 
+
+An Operation A *is an Unrelated Write To* another operation B if
+* A and B are both Write Operations
+* A *follows* B, and
+* A *does not Observe the Result of* B
+
+In these cases, A can additionally be said to *Negate* B if:
+* A *is an Unrelated Write To* B
+* B is not a Volatile Access, and
+* There exists no operation C, such that C does not *Observe the result of* A, and C *Observes the result of* B
+
+If A *Negates* B, then B can be elided by the implementation, as the value written by B will never be read. 
+
+### §3.5 Applies to the Same Memory Region as
+
+A Memory Region is any region designated by a given memory address, which is consumed by the value of:
+* A scalar Type (See §4.1 Scalar Types)
+* A Pointer Type, possibly restrict qualified (See §4.4 Pointer Types)
+* The value part of an Atomic Type (See §4.6 Atomic Types)
+* A vector type (See §4.3 Vector Types), where the component type of the vector is one of the above, or
+* A cv-qualified (See §4.2 Qualified Types) version of any of the above
+
+Or any memory address that is being consumed by a structure type for padding, or the lock portion of an Atomic Type (See §4.6),
+ when that memory address is examined as an array of u8. 
+
+An Operation A *applies to* a memory region M if:
+* A is a Memory Operation, which loads from or stores to the value at any M, or any address that falls within M
+* A is a Composite Operation, an either Operation which composes A *applies to* M
+ 
+Two Operations A and B *apply to the same memory region* if there is some memory region M, such that both A and B *applies to* M.
+ 
+Unlike other Relations *applies to the same memory region as* is symmetric. 
+
+### §3.6 Volatile Operations
+
+Volatile Operations are operations which must be performed AS-IS. They cannot be optimized by the implementation. 
+Volatile Operations are considered to have observable behavior. 
+
+Volatile Accesses are Volatile Operations which are also Memory Operations. 
+
+A Volatile Access A, which *follows* another Volatile Access B, *observes the result of* B.
+
+### §3.7 Atomic Operations
+
+Atomic Operations are operations which have coherency between threads. 
+
+For any two Atomic Operations A and B, which *apply to the same memory region*:
+ Either, A *observes the result of* B, or B *observes the result of* A (but not both). If this is not enforced by other rules, then it is unspecified which occurs. 
+
+Atomic Operations may be said to acquire a lock. It is unspecified when locks are used to enforce the coherency of atomic operations, 
+ however, a non-composite atomic operation which is a memory operation does not use a lock if:
+* The type of the value affected by the operation is an (possibly Atomic) Scalar type, or a cv-qualified version thereof, and
+* The Atomic version of the scalar type is defined to be Lock-free.
 
 
+### §3.8 Fence Operations
 
+Fence Operations are operations which provide coherency between threads, even when such coherency would otherwise not exist. 
+
+There are 3 kinds of Fence Operations: Sequence Fence, Acquire Fence, and Release Fence.
+
+Fence Operations are not Memory Operations. 
+
+The properties of a Fence Operation depend on the Kind of Fence.
+
+#### §3.8.1 Sequence Fence
+
+For any Sequence Fence S, if there is a Memory Operation A such that S *follows* A, then S *observes the result of* A.
+Additionally, if there is a Memory Operation B, such that B *follows* S, then B *observes the result of* S. 
+
+If a Sequence Fence A *follows* another Sequence Fence B, then A *observes the result of* B.
+
+If there are two Sequence Fences A and B, then either A *observes the result of* B, or B *observes the result of* A (but not both). 
+Additionally, given such Sequence Fences A and B form a Composite Operation AB, which is a Sequence Fence. 
+
+If there are three Sequence Fences A, B, and C; then the operations are ordered in some unspecified way,
+ such that the 2nd *observes the result of* the 1st, and the 3rd *observes the result of* of the composite operation from the 1st and the 2nd. 
+ 
+By these rules, Sequence Fences are said to be *sequentially-consistent* across threads. 
+
+#### §3.8.2 Acquire and Release Fence
+
+For any Acquire Fence A, if there is a memory operation B, such that B *follows* A, then B *observes the result of* A.
+
+Additionally, if there is an Atomic Operation C, for which A *follows* C, which is either:
+* An Read Operation, or
+* A Write Operation that *is computed from* An Atomic Operation D that is a Read Operation. 
+
+and C is the last such operation (that is, there is no Operation D that qualifies for which D *follows* C), 
+ then A *observes the result of* C (C is said to *acquire* A).
+ 
+For any Release Fence R, if there is a memory operation A, such that R *follows* A, then R *observes the result of* A.
+
+Additionally, if there is an Atomic Operation C, which is Read Operation, C *follows* R, 
+ and C is the last such operation, then C *observes the result of* R (C is said to *release* R). 
+ 
+If there is an Acquire Fence FA, which is acquired by an Atomic Operation A, and a Release Fence FR,
+ which is released by an Atomic Operation R, and A *observes the result of* R, then FA *observes the result of* FR. 
+
+## §4 Types
+
+### §4.1 Scalar Types
+
+Scalar Types are the fundamental building blocks of values in LCIR. 
+ 
