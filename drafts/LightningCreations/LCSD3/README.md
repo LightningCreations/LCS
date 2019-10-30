@@ -338,8 +338,9 @@ All types have alignment requirements which are a power of 2.
  The maximum valid alignment requirements for a type is implementation-defined. 
 
 ```
-TYPE = "u8" \ "i8" \ "u16" \ "i16" \ "u32" \ "i32" \ "u64" \ "i64" \ "ul" \ "il" \ "uptr" \ "lptr" \ "f32"
-         \ "f64" \ "fl" \ "bool" \ "u128" \ "i128" \ "f16" \ "f128"
+SCALARTYPE = "u8" \ "i8" \ "u16" \ "i16" \ "u32" \ "i32" \ "u64" \ "i64" \ "ul" \ "il" \ "uptr" \ "lptr" \ "f32"
+                      \ "f64" \ "fl" \ "bool" \ "u128" \ "i128" \ "f16" \ "f128"
+TYPE = SCALARTYPE
 ```
 
 (Note: Even if the implementation does not define the types 16-bit integer types, half or quad precision floating-point type, 
@@ -358,11 +359,12 @@ Types qualified as const and/or volatile have the same size and alignment requir
 
 Types with additional alignment requirements have those alignment requirements, rather than that of the unqualified type, but have the same size. 
 
-The order of all qualifiers is meaningless, there is no distiction between, for example, a volatile atomic type and an atomic volatile type. 
+The order of the `_C`, `_K`, and `_L` qualifiers is meaningless. 
+The order of `_C` and `_K` relative to `_Q` `_A`, and `_V` qualifiers is meaningless. 
 
 ```
 TYPEQUALIFIER = "_C" / "_K" / "_Q" / "_A" <DECINTEGER> / "_V" <DECINTEGER> / "_L" <POWEROFTWO>
-TYPE = <TYPEQUALIFIER> <TYPE>
+TYPE = <TYPEQUALIFIER> <TYPE> / "_A" <TYPE>
 ```
 
 #### §4.2.1 Const Qualifier
@@ -396,9 +398,17 @@ Types written as `_L<N><type>` are aligned types. An Aligned Type is aligned to 
 #### §4.2.4 Array Types
 
 Types written as `_A<N><type>` are array types.
- Array types are capable of storing *N* values of *type*. 
+ Array types are capable of storing *N* values of *type* called the element type. 
+ The element type of an array MUST be a complete type. 
  
  Array types have the same alignment requirements as *type*. 
+ 
+ *N* shall not be 0. 
+ 
+Types written as `_A<type>` are array types with an unknown bound. 
+
+An array type with an unknown bound is incomplete. 
+
  
 ### §4.3 Pointer Types
 
@@ -412,7 +422,7 @@ While there is a value of a restrict pointer type which points to a memory regio
  the program shall not access that memory region except through that pointer. 
  The behavior of a program that accesses such a memory region in violation of these rules is undefined. 
  
-(Note - By these rules, a program can't access a memory region at all, if there are two restrict pointers which point to it).
+(Note - By these rules, a program can't access a memory region at all, while there are two or more restrict pointers which point to it).
 
 
 ```
@@ -423,6 +433,42 @@ TYPE = ["_R"] "*" <TYPE>
 
 Types written as `_V<N><type>` are Vector Types. 
 
-Vector types store *N* values of *type*, like similar array types.
+Vector types store *N* values of *type*, called the component type. 
+`N` shall not be 0. 
 
+Vector types may be used as a single value in computations.
+ A vector of length N with scalar components occupies 1 memory region
+  (Note - an array of size N with scalar elements occupies N memory regions). 
+  
+If *type* is not a scalar type, it is implementation defined if a vector type with that component type can be defined. 
+
+The alignment requirements of a vector type are at least as strict as the alignment requirements for their component type. 
+
+
+### §4.5 User Defined Types
+
+The User can define additional types using structure declarations, union declarations,
+ enumeration declarations, or type alias declarations.
  
+The name of a User Defined Type is called a typename
+
+```
+TYPENAME = IDENT - ( SCALARTYPE / "void" )
+```
+
+Identifiers which start with an underscore (`_`) character, followed by any of `A`, `C`, `K`, `L`, `Q`, `T`, `V`, or `X`, 
+MUST NOT parse as a typename. 
+Additionally, any of the following identifiers MUST not parse as typenames: ``
+
+```
+TYPE = TYPENAME
+```
+
+A typename which was not introduced by one of the above declarations shall not be used as a type. 
+
+### §4.6 Atomic Types
+
+A type written as `_Q<type>` is an atomic type. 
+All memory operations on values of an atomic type are Atomic Operations. 
+
+
