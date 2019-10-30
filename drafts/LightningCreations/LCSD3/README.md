@@ -30,17 +30,24 @@ Unspecified Behavior is Behavior for which the implementation is given a choice 
 ## §2 LCIR Syntax
 
 An LCIR file is a collection of several symbols, type declarations, functions, and pragma declarations. 
-The following sections define the Base and Compound Syntax of an LCIR File, 
+The following sections define the Base and Compound Syntax of an LCIR File. 
+
+In this document, programs are considered to parse in two phases:
+ a grammar parse which simply attempts to build a tree of the file's syntax,
+  and a semantic parse, which checks for errors in the constructs used. 
+
+The Grammar parsing step is described using the Augmented Backus-Naur Form and sometimes in prose,
+ whereas the semantic parsing steps are described in prose. 
 
 ### §2.1 Base Syntax
 
 The following rules are used throughout this specification to
 describe basic parsing constructs. The US-ASCII coded character set
-is defined by ANSI X3.4-1986.
+is defined by ANSI X3.4-1986. 
 
 ```
 OCTET          = <any 8-bit sequence of data>
-CHAR           = <any valid character in the source charset, except for a Control Character, or the forward slash character "\">
+CHAR           = <any valid character in the source charset, except for a Control Character, or the backward slash character "\">
 UPALPHA        = <any US-ASCII uppercase letter "A".."Z">
 LOALPHA        = <any US-ASCII lowercase letter "a".."z">
 ALPHA          = UPALPHA / LOALPHA
@@ -51,8 +58,8 @@ SP             = <US-ASCII SP, space (32)>
 HT             = <US-ASCII HT, horizontal-tab (9)>
 <">            = <US-ASCII double-quote mark (34)>
 WS             = SP / HT / WS WS
-LS             = *CR LF
-NUL            = <US-ASCII Nul Character (0)>
+LS             = [CR] LF 
+NUL            = <US-ASCII NUL Character (0)>
 ```
 
 Whitespace in ABNF Declarations are not considered part of the grammar, and are purely to indicate separation. 
@@ -70,10 +77,11 @@ The Latin Decimal Digits ("0".."9"), the Space Character, Horizontal Tab, and Li
 and the Special Characters `"`, `'`, `$`, `_`, `-`, `+`, `*`, `>`, `&`, `\`, `[`, and `]`. 
 
 The Octet definitions used in the Base Syntax refer to the US-ASCII Character Set. 
-If the source character set is not US-ASCII, then the appropriate corresponding character MUST be used in place of the US-ASCII equivalent used above. 
+If the source character set is not US-ASCII,
+ then the appropriate corresponding character MUST be used in place of the US-ASCII equivalent used above. 
 
 There is a different charset, called the execution charset, which is only used for generation of string literals. 
-The execution charset shall contain all characters the Source Charset contains, and an Implementation-Defined Nul character. 
+The execution charset shall contain all characters the Source Charset contains, and an Implementation-Defined Null character. 
 
 
 ### §2.3 LCIR Compound Syntax
@@ -92,10 +100,14 @@ IDENT = (ALPHA / "$" / "_") *(ALPHA / DIGIT / "$" / "_").
 ESCSEQ = "\" ("x" HEXINTEGER \ DECINTEGER \ "n" \ "t" \ "r" \ <"> \ "\" \ "e" \ "'")
 STRING = <">*( CHAR \ ESCSEQ)<">
 LITCHAR = "'"(CHAR \ ESCSEQ) "'"
+POWEROFTWO = DECINTEGER
 ```
+
 
 When Parsing Numerical Escapes, the character shall be interpreted according to the execution charset, except that 
 the escape sequence `\0` shall always parse as the Nul Character. 
+
+POWEROFTWO only parses numbers which are a power of two. 
 
 ## §3 Operations
 
@@ -190,9 +202,9 @@ If A *Negates* B, then B can be elided by the implementation, as the value writt
 
 A Memory Region is any region designated by a given memory address, which is consumed by the value of:
 * A scalar Type (See §4.1 Scalar Types)
-* A Pointer Type, possibly restrict qualified (See §4.4 Pointer Types)
+* A Pointer Type, possibly restrict qualified (See §4.3 Pointer Types)
 * The value part of an Atomic Type (See §4.6 Atomic Types)
-* A vector type (See §4.3 Vector Types), where the component type of the vector is one of the above, or
+* A vector type (See §4.4 Vector Types), where the component type of the vector is one of the above, or
 * A cv-qualified (See §4.2 Qualified Types) version of any of the above
 
 Or any memory address that is being consumed by a structure type for padding, or the lock portion of an Atomic Type (See §4.6),
@@ -277,4 +289,132 @@ If there is an Acquire Fence FA, which is acquired by an Atomic Operation A, and
 ### §4.1 Scalar Types
 
 Scalar Types are the fundamental building blocks of values in LCIR. 
+Scalar Types have indivisible values, there is no discrete value that can be read from the representation
+ of a value of a scalar type, except that value itself. 
+ 
+With the exception of u8, i8, and types which are defined to have the same size and alignment as u8,
+ the alignment of scalar types is unspecified. 
+ 
+A type uN is unsigned, with its signed version being iN. iN has the same size and alignment as uN,
+ but stores a 2s compliment signed integer, rather than an unsigned integer. 
+ 
+The scalar types are the following:
+* u8, the smallest scalar type, which has a size of 1 byte, aligned to 1 byte, and can store any integer in the range `[0,255]`
+* i8, which stores any integer in the range `[-128,127]` using 2s compliment
+* u16, which has a size 2, and stores any integer in the range `[0,65535]`
+* i16, which stores any integer in the range `[-32768,32767]`
+* u32, which has size 4, and stores any integer in the range `[0,4294967295]`
+* i32, which stores any integer in the range `[-2147483648,2147483647]`
+* u64, which has size 8, and stores any integer in the range `[0,2^64-1]`
+* i64, which stores any integer in the range `[-2^63,2^63-1]`
+* The OPTIONAL types u128 and i128, which have size 16, and the ranges `[0,2^128-1]` and `[-2^127,2^127-1]`
+* ul and il, which have an implementation-defined size N. If N is 8, 16, 32, 64, or 128, then ulong and ilong also has the same alignment as uN, and the ranges of uN and iN respectively.
+* uptr and iptr, which have the same size and alignment as the pointer type, and implementation-defined ranges. 
+* f32, which has size 4, and stores an IEEE 754 single-precision binary floating-point number
+* f64, which has size 8, and stores an IEEE 754 double-precision binary floating-point number
+* fl, which has an implementation-defined size and representation.
+* OPTIONAL f16, which has size 2, and stores an IEEE 754 half-precision binary floating-point number
+* OPTIONAL f128, which has size 16, and stores an IEEE 754 quad-precision binary floating-point number
+* Additional Implementation-defined Extension Types (see §4.8 Extension Types)
+* bool, which has the same size and alignment as u8, and is suitable for storing either 0 (for false), or 1 (for true)
+
+Scalar types larger than 1 byte have an implementation-defined endianness.
+ Big Endian stores the most significant byte in the lowest number address,
+ Little Endian stores the most significant byte in the highest numbered address. 
+ 
+Alignment of Scalars determines where implementations are easily able to load and store values of that type. 
+A program that attempts to load a scalar value from, or store a scalar value to a memory region which is not aligned
+ at least as strictly as the scalar type requires, the behavior is undefined. 
+ 
+All types have alignment requirements which are a power of 2.
+ The maximum valid alignment requirements for a type is implementation-defined. 
+
+```
+TYPE = "u8" \ "i8" \ "u16" \ "i16" \ "u32" \ "i32" \ "u64" \ "i64" \ "ul" \ "il" \ "uptr" \ "lptr" \ "f32"
+         \ "f64" \ "fl" \ "bool" \ "u128" \ "i128" \ "f16" \ "f128"
+```
+
+(Note: Even if the implementation does not define the types 16-bit integer types, half or quad precision floating-point type, 
+ the grammar still parses them as types, the implementation makes the distinction in semantic parsing).
+
+### §4.2 Qualified Types
+
+All types can be additionally qualified as being const, volatile, atomic, an array or vector type, or having additional alignment requirements. 
+
+These qualifiers take the form of an underscore character, followed by a capital letter designating the qualifier, 
+ then (in the case of array, vector, or aligned types) possibly an integer number. 
+ 
+Atomic and Vector types are described specially, in their own sections. 
+
+Types qualified as const and/or volatile have the same size and alignment requirements as the unqualified type. 
+
+Types with additional alignment requirements have those alignment requirements, rather than that of the unqualified type, but have the same size. 
+
+The order of all qualifiers is meaningless, there is no distiction between, for example, a volatile atomic type and an atomic volatile type. 
+
+```
+TYPEQUALIFIER = "_C" / "_K" / "_Q" / "_A" <DECINTEGER> / "_V" <DECINTEGER> / "_L" <POWEROFTWO>
+TYPE = <TYPEQUALIFIER> <TYPE>
+```
+
+#### §4.2.1 Const Qualifier
+
+Types written as `_C<type>` are const qualified types.
+ 
+ A memory region which stores a value of a const-qualified scalar type cannot be written too. 
+ If a Write Operation *applies to* a memory region which stores a value of a const-qualified scalar type,
+  the behavior is undefined. 
+ 
+ Const-qualification applies to members of structure types (see §4.5) transitively. 
+ The type of a member of a const-qualified structure type is const-qualified itself. 
+ This also applies to the elements of an array or a vector. 
+ 
+#### §4.2.2 Volatile Qualifier
+
+Types written as `_V<type>` are volatile-qualified type. 
+
+A memory region which stores a value of a volatile-qualified scalar type can only be accessed with a volatile operation. 
+If a Memory Operation *applies to* a memory region which stores a value of a volatile-qualified scalar type,
+ that Operation must be a Volatile Access, or the behavior is undefined. 
+ 
+ Like const-qualification, volatile-qualification applies to members of a structure type transitively, 
+  as well as to members of a volatile-qualified array or vector. 
+  
+#### §4.2.3 Alignment Qualifier
+
+Types written as `_L<N><type>` are aligned types. An Aligned Type is aligned to *N* bytes.
+ N MUST be at least the alignment requirement of *type*. 
+ 
+#### §4.2.4 Array Types
+
+Types written as `_A<N><type>` are array types.
+ Array types are capable of storing *N* values of *type*. 
+ 
+ Array types have the same alignment requirements as *type*. 
+ 
+### §4.3 Pointer Types
+
+Types written as `*<type>` are pointer types. 
+A Pointer type stores the address of a memory region, or part of a memory region (when examined as an array of u8). 
+All pointer types have the same, implementation-defined, size and alignment requirements. 
+
+Additionally, types written as `_R*<type>` are restrict pointer types. 
+A restrict pointer type has the same size and alignment requirements as a pointer type. 
+While there is a value of a restrict pointer type which points to a memory region,
+ the program shall not access that memory region except through that pointer. 
+ The behavior of a program that accesses such a memory region in violation of these rules is undefined. 
+ 
+(Note - By these rules, a program can't access a memory region at all, if there are two restrict pointers which point to it).
+
+
+```
+TYPE = ["_R"] "*" <TYPE>
+```
+
+### §4.4 Vector Types
+
+Types written as `_V<N><type>` are Vector Types. 
+
+Vector types store *N* values of *type*, like similar array types.
+
  
