@@ -458,7 +458,6 @@ TYPENAME = IDENT - ( SCALARTYPE / "void" )
 
 Identifiers which start with an underscore (`_`) character, followed by any of `A`, `C`, `K`, `L`, `Q`, `T`, `V`, or `X`, 
 MUST NOT parse as a typename. 
-Additionally, any of the following identifiers MUST not parse as typenames: ``
 
 ```
 TYPE = TYPENAME
