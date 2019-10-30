@@ -146,7 +146,7 @@ Additionally, Operations can have Types, which affect optimization, and relative
 For brevity, the term Memory Operation may also be used to describe operations. This is not a descrete type, 
 rather any Operation which is either a Read Operation, a Write Operation, or composed of at least one such operation, 
 is a Memory Operation. 
-The term Volatile Access may also be used in such a say, and any Memory Operation that is also a Volatile Operation is a Volatile Access. 
+The term Volatile Access may also be used in such a way, and any Memory Operation that is also a Volatile Operation is a Volatile Access. 
 
 ### §3.2 Follows 
 
@@ -283,6 +283,14 @@ Additionally, if there is an Atomic Operation C, which is Read Operation, C *fol
  
 If there is an Acquire Fence FA, which is acquired by an Atomic Operation A, and a Release Fence FR,
  which is released by an Atomic Operation R, and A *observes the result of* R, then FA *observes the result of* FR. 
+
+### §3.9 Is Computed From
+
+An Operation A *is computed from* B, if:
+* A is a Computation, B is a Read Operation and the value loaded by B is an operand in A
+* Both A and B are computations, and the result of B is an operand in A
+* A is a Write Operation, and B is a Read Operation, and the value loaded by B is the value stored by A
+* A is a Write Operation, B is a Computation, and the result of B is the value stored by A
 
 ## §4 Types
 
