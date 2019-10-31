@@ -18,7 +18,7 @@ The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "S
  
 ### §1.3 Undefined Behavior
 
-Undefined Behavior occurs in an LCIR program when a construct of LCIR is violated, but no result is prescribed by the LCIR Specification. 
+Undefined Behavior occurs in an LCIR program when a constraint of LCIR is violated, but no result is prescribed by the LCIR Specification. 
 
 In such an occurance, no limitations are posed on the result of that violation by the LCIR Specification. 
 Cases where this occurs will be explicitly documented using the declarative wording "the behavior is undefined", or "the behavior of ... is undefined"
@@ -26,6 +26,23 @@ Cases where this occurs will be explicitly documented using the declarative word
 ### §1.4 Unspecified Behavior
 
 Unspecified Behavior is Behavior for which the implementation is given a choice on how to proceed.  
+ 
+### §1.5 Implementation-defined Behavior
+
+Implementation-defined behavior is Unspecified Behavior for which the implementation MUST document how the choice is made. 
+ 
+### §1.6 Ill-formed
+
+An LCIR program is ill-formed if it contains misused constructs of LCIR.
+ A program that is ill-formed shall fail the semantic parse. 
+ Implementations shall issue a diagnostic for any program that is ill-formed. 
+ 
+### §1.7 Ill-formed; No Diagnostic Required
+
+An LCIR Program is ill-formed; no diagnostic required if it contains misused constructs of LCIR,
+ but it may be difficult or impossible to detect for issue a diagnostic for. 
+ 
+ The behavior of an LCIR Program which is ill-formed; no diagnostic required is undefined. 
  
 ## §2 LCIR Syntax
 
@@ -469,5 +486,86 @@ A typename which was not introduced by one of the above declarations shall not b
 
 A type written as `_Q<type>` is an atomic type. 
 All memory operations on values of an atomic type are Atomic Operations. 
+The size and alignment requirements of atomic types are unspecified.
+
+It is implementation defined if an Atomic Type is "lock free". If an atomic type is "lock free",
+ then the entire representation is the value part and can store a value of *type*. 
+Otherwise, an unspecified part of the representation is the "lock" part
+ and the rest of the representation is the value part and can store a value of *type*. 
+ 
+The value and representation of the lock part is indeterminate. If observed as an array of `u8`,
+ the value of any given byte is indeterminate.
+ 
+#### §4.6.1 Atomic Boolean Type
+
+The type written as `_Qbool` is a special case of atomic types. 
+`_Qbool` has the same size and alignment requirements as `ul`. `_Qbool` is always lock free. 
+
+`_Qbool` is referred to as the Atomic Boolean Type. 
+
+## §5 Declarations
+
+An LCIR File is made up of a sequence of declarations, and definitions. 
+
+```
+file = *([<declaration>] <LS>)
+```
+
+A file that does not contain at least one declaration except for a pragma declaration is ill-formed. 
+
+### §5.1 Pragma Declaration
+
+A pragma starts with the word in lower case `pragma` followed by an identifier. 
+Pragma declarations have implementation-defined results.
+ If a pragma is not known, the implementation SHOULD issue a non-failing diagnostic, and MUST otherwise ignored it. 
+
+Following the pragma, there is an implementation-defined sequence of identifiers, numbers, and string literals. 
+The meaning of any given sequence is implementation-defined. 
+
+There are a standard pragmas, described below, which has their respective results defined here.
+
+```
+pragmaarg = <IDENT> / <DECINT> / <STRING>
+pragmadecl = "pragma" <IDENT> *<pragmaarg>
+declaration = pragmadecl
+```
+
+#### §5.1.1 Want Pragma
+
+The want pragma is a standard pragma which causes the program to require a standard extension. 
+The standard extensions are either defined within this document,
+ or in other LCS Documents. 
+ 
+The want pragma declaration takes the form `pragma want <extension> <version>`,
+ and requires the standard extension with code *extension* at *version*. 
+ 
+It is implementation-defined which standard extensions are provided at which versions. 
+
+If the implementation does not provide the requested standard extension at the requested version, the file is ill-formed. 
+
+```
+wantpragma = "pragma want" <IDENT> <INT>
+pragmadecl = <wantpragma>
+```
+
+#### §5.1.2 Target Pragma
+
+The target pragma is a standard pragma which causes the file to be lowered by the implementation to a different target then default. 
+
+The target pragma takes the form `pragma target <target>`. 
+The meaning of any given *target* is implementation-defined. 
+
+A file may contain up to one target pragma. A file that contains multiple target pragmas is ill-formed. 
+
+If a target pragma appears after any declaration that is not a pragma declaration,
+ which would be affected by the presense of the target pragma, 
+ the file is ill-formed; no diagnostic required. 
+
+If after a target pragma, an implementation would not be able to fufill any requests
+ made by pragma declarations which appear before the target pragma (including want pragmas), 
+ the program is ill-formed. 
+ 
+
+
 
 
