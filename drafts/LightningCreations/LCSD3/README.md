@@ -526,7 +526,7 @@ There are a standard pragmas, described below, which has their respective result
 
 ```
 pragmaarg = <IDENT> / <DECINT> / <STRING>
-pragmadecl = "pragma" <IDENT> *<pragmaarg>
+pragmadecl = "pragma" <WS> <IDENT> *(<WS> <pragmaarg>)
 declaration = pragmadecl
 ```
 
@@ -544,7 +544,7 @@ It is implementation-defined which standard extensions are provided at which ver
 If the implementation does not provide the requested standard extension at the requested version, the file is ill-formed. 
 
 ```
-wantpragma = "pragma want" <IDENT> <INT>
+wantpragma = "pragma" <WS> want" <WS> <IDENT> <WS> <INT>
 pragmadecl = <wantpragma>
 ```
 
@@ -558,12 +558,46 @@ The meaning of any given *target* is implementation-defined.
 A file may contain up to one target pragma. A file that contains multiple target pragmas is ill-formed. 
 
 If a target pragma appears after any declaration that is not a pragma declaration,
- which would be affected by the presense of the target pragma, 
+ which would be affected by the presence of the target pragma, 
  the file is ill-formed; no diagnostic required. 
 
 If after a target pragma, an implementation would not be able to fufill any requests
  made by pragma declarations which appear before the target pragma (including want pragmas), 
- the program is ill-formed. 
+ the file is ill-formed. 
+ 
+```
+targetpragma = "pragma" <WS> "target" <WS> <IDENT>
+pragmadecl = <targetpragma>
+```
+
+### §5.2 Type Alias Declarations
+
+A Declaration can introduce a User Defined Type, which is the same as an existing type. 
+This kind of declaration is called a Type Alias Declaration. 
+
+A Type Alias Declaration takes the form `typedef <type> <typename>`. 
+
+After the Type Alias Declaration *typename* means the same thing as *type*. 
+If *typename* already identifies a symbol, function, external symbol, or type, the file is ill-formed. 
+
+Note that *type* and *typename* are exactly the same for the purposes of redeclaration,
+ as well as when linking (§7).
+  There is no difference between any subsequent declaration that uses *type* or the aliasing *typename*. 
+  A conversion or representation-conversion between a value of *type* and a value of *typename* is always an identity conversion. 
+  
+```
+aliasdecl = "typedef" <WS> <type> <WS> <typename>
+declaration = aliasdecl
+```
+
+### §5.3 Structure Declaration
+
+A Declaration can introduce a User Defined Type which is composed of multiple other types. 
+This kind of declaration is called a Structure Declaration, and introduces a Structure Type. 
+
+
+
+
  
 
 
