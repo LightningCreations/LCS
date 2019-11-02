@@ -635,6 +635,7 @@ declaration = aliasdecl
 A Declaration can introduce a User Defined Type which is composed of multiple other types. 
 This kind of declaration is called a Structure Declaration, and introduces a Structure Type. 
 
+A structure type consists of a series of members, each member having a type
 
 
 
