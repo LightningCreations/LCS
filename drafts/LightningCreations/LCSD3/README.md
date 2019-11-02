@@ -433,6 +433,26 @@ Types written as `*<type>` are pointer types.
 A Pointer type stores the address of a memory region, or part of a memory region (when examined as an array of u8). 
 All pointer types have the same, implementation-defined, size and alignment requirements. 
 
+A pointer may additionally be a null pointer, which points to nothing. 
+The representation of a null pointer is implementation-defined. A null pointer is an invalid pointer.
+
+A pointer value is invalid if it does not point to a memory region or part of a memory region. 
+
+For pointers to types that are not scalar, enumeration, vector of scalar, pointer types:
+* A pointer to a structure points to the memory region a pointer to its first member would point to, 
+ if such a member exists, otherwise it points to a memory region consumed by a padding byte. 
+* A pointer to a union points to the memory region that a pointer to its active member would point to. 
+* A pointer to an array, or vector with a non-scalar component type,
+  points to the memory region a pointer to its first element would point to.
+* A pointer to a lock-free atomic type points to the memory region a pointer to its value region would point to.
+* A pointer to any other atomic type points to a memory region consumed by a padding byte. 
+
+If a pointer points to a memory region that is not consumed by a padding byte,
+ another pointer of any type which points to the same memory region is *pointer-interconvertible* with the first pointer. 
+
+Performing a representation-conversion between pointers of such types will always result in a valid pointer of the destination type.  
+
+
 Additionally, types written as `_R*<type>` are restrict pointer types. 
 A restrict pointer type has the same size and alignment requirements as a pointer type. 
 While there is a value of a restrict pointer type which points to a memory region,
@@ -441,10 +461,30 @@ While there is a value of a restrict pointer type which points to a memory regio
  
 (Note - By these rules, a program can't access a memory region at all, while there are two or more restrict pointers which point to it).
 
-
 ```
 TYPE = ["_R"] "*" <TYPE>
 ```
+
+### §4.3.1 Pointer Aliasing Rules
+
+A pointer value `P` of type `*T` or `_R*T`, which points to a memory region `N` which is part of
+ or the whole of the value `v` may not be used to access a memory region `M` with type `S`,
+  unless, ignoring top-level cv-qualifiers on S and T:
+* T is `u8` or an array of `u8` (it is always valid to examine any memory region as an array of `u8`)
+* T is a structure type, and a pointer to any data member of `v` may be used to access `M`
+* T is a union type, and a pointer to the active data member of `v` may be used to access `M`
+* T and S are similar
+
+The behavior of such an access to a memory region is undefined. 
+
+Two types T and S are similar, if, ignoring top-level cv-qualifiers:
+* T and S are the same types, aliases of the same type, or signed/unsigned variants of the same scalar type
+* T and S are both pointers, and the pointed-to types are similar
+* T and S are both array types with the same length, and the element types are similar
+* T and S are both vector types with the same length, and the component types are similar
+* T and S are both aligned types with the same alignment requirements, and the unqualified types are similar
+* T and S are both lock-free atomic types, and the unqualified types are similar
+* _Qbool is similar to both ulong and ilong. 
 
 ### §4.4 Vector Types
 
