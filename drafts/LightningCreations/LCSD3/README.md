@@ -543,6 +543,76 @@ The type written as `_Qbool` is a special case of atomic types.
 
 `_Qbool` is referred to as the Atomic Boolean Type. 
 
+#### §4.7 Function Types
+
+A Function type is any type in the form `_F[convention_code]<return_type><argument_types...>[V]`.
+
+Function types may not be the type of any symbol, and you cannot have arrays or vectors of function types.
+ There is no cv-qualified function type, nor atomic function types. You can however have a pointer to a function type. 
+ 
+Convention Codes, if present, are encoded as `C<length><name>$`. 
+ `name` shall be an identifier that is `length` characters long (in the source character set). 
+
+What convention codes are supported are implementation defined. The default convention code (when omitted) is implementation defined. 
+
+Return type, and each argument type is encoded as `<length><type>`. 
+Additional information may be encoded between the return type and the argument types. 
+
+No argument type may be void, a function type, an array type, an uncompleted structure type, or a qualified version of such. 
+The return type may not be a function type, an array type, an uncompleted structure type, or a qualified version of such, 
+ but may be (possibly cv-qualified) void. 
+
+For example, the type qualifiers `_C`, `_K`, and `_Q` may be encoded into the beginning of the argument types. 
+Additional, implementation-defined qualifiers in the form `Q<length><name>$` may appear as well. 
+All qualifiers are order-independant. 
+
+A function type with a trailing `V` (that is not part of any argument type), indicates that the function has C style varargs. 
+ How this affects calling convention is implementation-defined. 
+
+```
+paramtype = <DECINT><type>
+lengthprefixedident = <DECINT><IDENT>
+qualifier = "_C" / "_K" / "_Q" / "Q" <lengthprefixedident> "$"
+argument_types = *<qualifier> *<paramtype>
+convention_code = "C" <lengthprefixedident> "$"
+function_type = "_F" *<convention_code> <paramtype> <argument_types> *"V"
+type = <function_type>
+```
+
+`paramtype` and `lengthprefixedident` with a length prefix of N shall parse exactly N characters after the prefix. 
+If the fully parsed entity is not valid, it fails the grammar parse. 
+
+
+##### §4.7.1 C++ Function Types
+_This section is non-normative. It does not define a construct of this specification, and is for informative purposes only_
+
+The type qualifiers `_C` and `_K` correspond to C++ member function qualifiers const and volatile. 
+Additionally,
+ the following guide for implementation-defined qualifiers may be used for additional function information:
+* `noexcept` indicates the function type is either `noexcept` or `noexcept(true)` in source, lack indicates either `noexcept(false)` or no exception guarantee
+* `lvalue` indicates the function type has lvalue reference qualifier in source
+* `rvalue` indicates the function type has rvalue reference qualifier in source
+* `transaction` indicates the function type was declared `transaction_safe` in the source. `_Q` may also be used for this purpose. 
+* `noreturn` indicates the function type was declared `noreturn` in the source. This may also be used for the C keyword `_Noreturn`. 
+
+#### §4.8 Extension Types
+
+The implementation may define any number of extension types with implementation-defined properties,
+ in the form `_X<typename>`. 
+
+```
+extensiontype = "_X" <typename>
+type = extensiontype
+```
+
+#### §4.9 Void Type
+
+The type `void` is a special type. No symbol can have this type, you cannot have an array, vector, atomic, or aligned version of `void` 
+ (but you can have cv-qualified `void`). 
+ 
+A Function that returns the `void` type, or a cv-qualified variant 
+ 
+
 ## §5 Declarations
 
 An LCIR File is made up of a sequence of declarations, and definitions. 
@@ -635,9 +705,9 @@ declaration = aliasdecl
 A Declaration can introduce a User Defined Type which is composed of multiple other types. 
 This kind of declaration is called a Structure Declaration, and introduces a Structure Type. 
 
-A structure type consists of a series of members, each member having a type
+A structure type consists of a series of members, each member having a type and possibly a name. 
 
-
+A member 
 
  
 
