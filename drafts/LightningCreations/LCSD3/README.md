@@ -618,7 +618,7 @@ A Function that returns the `void` type, or a cv-qualified variant
 An LCIR File is made up of a sequence of declarations, and definitions. 
 
 ```
-file = *([<declaration>] <LS>)
+file = *(*<WS> [<declaration>] *<WS> <LS>)
 ```
 
 A file that does not contain at least one declaration except for a pragma declaration is ill-formed. 
@@ -711,15 +711,34 @@ A member takes the form `<type> <name>[:<bitfield length>]`, and there can be an
  Each member is separated by a comma. 
 Additionally, a member may be unnamed, if and only if it is a bitfield member with length 0. 
  Such members must always be unnamed. 
+The type of each member must be complete. 
  
 A structure type shall have an unspecified size such that each memory region consumed by any member is distinct
  from every other such memory region.
   The alignment of a structure type is unspecified and shall be at least the largest alignment requirement among all members.
 
+If a structure is empty (has no members),
+ it shall be treated as though it had a single member of type `u8` and no name.
+ This member cannot be accessed, and has an indeterminate value. 
+ 
+If the structure has no brace-enclosed member list, it is an incomplete type.
+ This is called a forward declaration. 
+ Additionally, if a structure has a brace-enclosed member list,
+  the structure type is incomplete until the closing brace. Members of the structure cannot have that structure type. 
+
+Symbols cannot have such a structure type, a program cannot declare an array of such a structure type, 
+ or be returned from or accepted by any functions. 
+ 
+A single structure type may have any number of forward declarations but up to one declaration with a brace-enclosed member list, 
+ A forward declaration after any other declaration has no effect.
+  In particular, if the structure has already been given a brace-enclosed member list, 
+  subsequent forward declarations will not negate that list. 
+ 
+
 ```
-member = ((<type> <WS> <IDENT> *<WS> [":" *<WS> <DECINT>]) / (<type> *<WS> ":" *<WS> "0")) *(<WS> / <NL>)
-member_list = <member> / <member> "," *(<WS> / <NL>) <member>
-structure_decl = "struct" <WS> <typename> *(<WS> / <NL>){*(<WS> / <NL>) [<member_list>]}
+member = ((<type> <WS> <IDENT> *<WS> [":" *<WS> <DECINT>]) / (<type> *<WS> ":" *<WS> "0")) *(<WS> / <LS>)
+member_list = <member> / <member> "," *(<WS> / <LS>) <member>
+structure_decl = "struct" <WS> <typename> *(<WS> / <LS>) ["{" *(<WS> / <LS>) [<member_list>] "}"]
 declaration = <structure_decl>
 ```
 
@@ -749,8 +768,119 @@ Alignment requirements for the types of bitfield members are ignored.
  For the purposes of determining the length of the base type, `bool` has length 1, 
  and an integral type `uN` or `iN` has length N. 
  
+### §5.4 Union Declarations
 
+In addition to structure types, programs may declare types using a Union Declaration. 
+
+Unions are similar to Structures, but store all members in an overlapping Memory Region. 
+A union may not have bitfield members with length 0. 
+
+For any union value, there is at most one active member.
+ If any other member is accessed by a Write Operation that member becomes active. 
+ If any non-active member is accessed by a Read Operation,
+  then the value of the active member is read and undergoes a Representation-cast. 
+  
+The union's size and alignment is unspecified,
+ but shall be at least large enough to hold its largest single member, 
+ and shall be aligned at least as strictly as it strictest member. 
  
+ Union types have the same rules as structure types for forward declarations. 
+ A member of a union type may not have that union type. 
+ 
+```
+uniondecl = "union" *<WS> <typename> ["{" *(<WS>/<LS>) <member_list> "}"]
+declaration = <uniondecl>
+```
+ 
+### §5.5 Enumeration Declaration
+
+Programs may declare a final kind of user-defined type, called an Enumeration Type. 
+
+An Enumeration type has an explicit, or implicit underlying type,
+ and may have any number of enumeration constants, each initialized to some integer.
+ 
+The underlying type of an enumeration shall be an integral type. 
+
+Enumeration types are similar to scalar types. A value of an enumeration type consumes a single memory region. 
+It is implementation-defined if a vector type can have an enumeration type as its component, 
+ however, if permitted, a value of such a vector type consumes a single memory region. 
+ 
+```
+enumconstant = <IDENT> *<WS> "=" *<WS> <INT> *(<WS>/<LS>)
+enumlist = <enumconstant> *("," *(<WS>/<LS>) <enumconstant> ) 
+enumdecl = "enum" *<WS> <typename> *<WS> [ ":" *<WS> <type> *<WS>] "{" *(<WS>/<LS>) [<enumlist>] "}"
+declaration = <enumdecl>
+```
+
+### §5.6 Symbol Declaration
+
+Programs may declare symbols, or static fields. 
+A symbol declaration may have any type that is not void, an array of an unknown bound, a function type, 
+ an incomplete structure or union type, or a cv-qualified variant of any of those. 
+ 
+A symbol has a name which is an identifier. A symbol may optionally have an initializer. 
+The initializer of a symbol must be a literal, an aggregate initializer,
+ or an empty pair of braces (to explicitly indicate zero-initialization of the symbol). 
+
+If there is an empty pair of braces in the initializer, or no initializer,
+ then the symbol is zero initialized, otherwise it is constant initialized by the time the symbol can be first accessed:
+* Symbols of a scalar type are initialized as though they had the initializer `0`. 
+* Symbols of a pointer type are initialized to the null pointer
+* Symbols of a structure or array type are aggregate-initialized with all members or element being zero-initialized. 
+* Symbols of a union type are aggregate-initialized with the first member becoming active and being zero-initialized
+* Symbols of an atomic type has the value portion zero-initialized,
+ and the lock portion (if any) initialized in an unspecified way.
+* Symbols of a vector type have all components zero-initialized
+ 
+Symbol's may additionally have a linkage spec, which is either extern or static. 
+If extern is used, the declaration has external linkage. 
+Otherwise, the symbol has internal linkage. This effects Linking (§7). 
+Symbols may additionally have "weak" linkage. 
+
+If a file declares a symbol of a const-qualified type without an initializer,
+ the file is ill-formed, unless the declaration is an External Symbol Declaration. 
+If the initializer is not valid for the symbol type, the file is ill-formed. 
+If a symbol which has an aggregate initializer is not of a structure, union, array, or vector type,
+ a cv-qualified variation, or an atomic or aligned version thereof, the file is ill-formed. 
+ 
+```
+linkagespec = "extern" / "static" / "weak"
+initializer = <STRING> / <LITCHAR> / <INT> / <FLOAT> / "{"*<WS> "}" / <aggregateinitializer>
+symbol = [<linkagespec> <WS>] <type> <WS> IDENT *<WS> ["=" *<WS> <initializer>]
+```
+
+#### §5.6.1 Aggregate Initialization
+
+A symbol of an structure, union, array, or vector type may have an aggregate initializer. 
+With such an initializer, each member, element, or component of the symbol is initialized according
+ to a sequence of initializers, then each trailing member is zero-initialized. 
+ 
+If the symbol has a structure, array, or vector type, the number of initializers must be at most the 
+ number of members, elements, or components. 
+If the symbol has a union type, the number of initializers must be exactly one. 
+ The first member of the union becomes active and is initialized. 
+
+The initializers must be the correct type (as above) for the initialized member. 
+
+```
+aggregateinitializer = "{" *<WS> <initializer> *<WS> *(","*<WS> <initializer> *<WS>) "}"
+```
+
+#### §5.6.2 External Symbol Declaration
+
+A symbol declaration with the linkage specifier "extern" that does not have an initializer.
+ Such a Symbol Declaration has special standing. 
+ 
+An External Symbol Declaration is not zero-initialized,
+ rather it is tied to some other symbol with the same name during Linking (§7). 
+ 
+Additionally, external symbol declarations may have an incomplete structure or union type or be an array of an unknown bound. 
+ (Note - void is still not a valid type for an external symbol declaration).
+ 
+### §5.7 Function Declaration
+ 
+Function declarations 
+
 
 
 
