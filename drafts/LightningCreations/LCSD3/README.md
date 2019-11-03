@@ -707,7 +707,48 @@ This kind of declaration is called a Structure Declaration, and introduces a Str
 
 A structure type consists of a series of members, each member having a type and possibly a name. 
 
-A member 
+A member takes the form `<type> <name>[:<bitfield length>]`, and there can be any number of members. 
+ Each member is separated by a comma. 
+Additionally, a member may be unnamed, if and only if it is a bitfield member with length 0. 
+ Such members must always be unnamed. 
+ 
+A structure type shall have an unspecified size such that each memory region consumed by any member is distinct
+ from every other such memory region.
+  The alignment of a structure type is unspecified and shall be at least the largest alignment requirement among all members.
+
+```
+member = ((<type> <WS> <IDENT> *<WS> [":" *<WS> <DECINT>]) / (<type> *<WS> ":" *<WS> "0")) *(<WS> / <NL>)
+member_list = <member> / <member> "," *(<WS> / <NL>) <member>
+structure_decl = "struct" <WS> <typename> *(<WS> / <NL>){*(<WS> / <NL>) [<member_list>]}
+declaration = <structure_decl>
+```
+
+#### §5.3.1 Bitfields
+
+A bitfield (with the trailing bitfield length) allows you to manipulate the size of member of an integral type
+ (`u8`, `i8`, `u16`, `i16`, `u32`, `i32`, `ul`, `il`, `u64`, `i64`, `u128`, `i128`, and `bool`). 
+ 
+The largest continuous sequence of bitfield members for a single structure type,
+ that does not include a bitfield of length zero consumes a single memory region. 
+ 
+A bitfield of length zero does not consume any memory region,
+ but any following bitfields are guaranteed to fall into a different memory region from any previous bitfields. 
+ 
+Alignment requirements for the types of bitfield members are ignored. 
+
+(Note - As member regions deal with complete bytes,
+ this implies that a bitfield that immediately follows a bitfield of length 0 is aligned to a byte boundry). 
+ 
+ If a bitfield is shorter than the length of its type,
+  then the values that can be stored in a bitfield of length L range from `[0,2^L)` for unsigned types,
+   and `[-2^(L-1),2^(L-1))` for signed types. 
+   
+ If a bitfield is longer than the length of its type,
+  then the values which can be stored remain the same, and additional bits are used as padding. The value of these bits is indeterminite. 
+  
+ For the purposes of determining the length of the base type, `bool` has length 1, 
+ and an integral type `uN` or `iN` has length N. 
+ 
 
  
 
