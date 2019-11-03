@@ -11,5 +11,9 @@ It shall be subjected to annual Committee Review as defined in §2.3 of LCS 2.
 
 ## §2 LCS Review Committee Members
 
-The following persons have been appointed as members of the LCS Review Committee and are voluntarily serving as such:
+The following persons have been appointed as members of the LCS Review Committee
+ and are voluntarily serving as such:
 * Connor Horman
+* Matthew Johnson
+* Maelen Kibler
+* Ray Redondo
