@@ -876,12 +876,84 @@ An External Symbol Declaration is not zero-initialized,
  
 Additionally, external symbol declarations may have an incomplete structure or union type or be an array of an unknown bound. 
  (Note - void is still not a valid type for an external symbol declaration).
- 
+
 ### §5.7 Function Declaration
  
 Function declarations 
 
+A Function may have any number of local variables. 
+These are declared similar to symbols, except that if they lack a linkage specifier, they are automatic. 
+Automatic Local Variables shall not have an initializer. 
+The value of such local before it is first written to is indeterminate. 
+If an indeterminate value of any type other than `u8` is loaded by a Read Operation, the behavior is undefined. 
+If a Computation is applied to an indeterminate value of any type other than `u8`, the behavior is undefined. 
+
+The implementation shall provide storage for all local variables of a volatile qualified type. 
+It is unspecified how this storage is provided. 
+
+```
+label = <typename> ":"
+local = <symbol>
+locals = (*<WS> <local> *<WS> <LS>) / (<locals> <locals>)
+insns = ([*<WS> label *<WS> [<LS>]]*<WS> <intruction> *<WS> <LS>) / (<insns> <insns>)
+functionbody = [<locals>] <insns>
+function =*<WS> [<linkagespec> <WS>] *<WS> [<conventioncode> <WS>] <type> <WS> <IDENT> *<WS>"("*(*<WS><type>[<WS><IDENT>]*<WS>")"*<WS> [functionbody]
+```
+
+#### §5.7.1 Foreign Functions
+
+External Functions may be defined in a different programming language then LCIR. 
+Such an External Function is called a Foreign Function. 
+LCIR Programs may call Foreign Functions. The behavior of a Foreign Function, 
+ with respect to LCIR Constructs, is Implementation-defined.
+ 
+(Note - A compiler for such a programming language may choose to compile that language to LCIR. 
+ Such a function is still a Foreign Function, 
+ however the implementation-defined behavior would be the behavior which the compiled form of the function perscribes)
 
 
+## §6 Instructions
 
+Operations in an LCIR Program are the result of Instructions. 
+
+
+### §6.1 Pseudo-instructions
+
+Special Instructions, called Pseudo-instructions may be used to indicate certain things to the implementation. 
+These instructions are intended to have no effect, though the implementation may use them in optimizations. 
+
+Psuedo-instructions are prefixed with `.`
+
+
+#### §6.1.1 destroy 
+
+The psuedo-instruction `.destroy <local>` indicates that a local variable is no longer in scope at a point. 
+After `.destroy`, the value of the named local variable is indeterminate.
+Local shall name a local variable declared in the function which contains this psuedo-instruction. 
+
+```
+destroyinsn = ".destroy" <WS> <IDENT>
+instruction = destroyinsn
+``` 
+
+#### §6.1.2 clobber
+
+The psuedo-instruction `.clobber <local>` indicates that the implementation cannot make any assumptions
+ about the value of *local* following an operation. 
+ That is, The first memory operation that follows a clobber psuedo-instruction,
+  applies to a memory region consumed by *local* is a Volatile Access.
+  
+ Local shall name a local variable declared in the function which contains this pseudo-instruction.
+ 
+If local subjected to a clobber instruction is subsequently accessed through a which
+ was created by prior to this pseudo-instruction, the behaviour is undefined. 
+  
+ (Note - The last paragraph is to allow implementations to assume that values accessed through
+  restrict pointers are not clobbered at any point)
+  
+```
+clobberinsn = ".clobber" <WS> <IDENT>
+instruction = clobberinsn
+```
+  
 
