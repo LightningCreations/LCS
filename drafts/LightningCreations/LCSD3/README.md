@@ -948,7 +948,7 @@ The psuedo-instruction `.clobber <local>` indicates that the implementation cann
 If local subjected to a clobber instruction is subsequently accessed through a which
  was created by prior to this pseudo-instruction, the behaviour is undefined. 
   
- (Note - The last paragraph is to allow implementations to assume that values accessed through
+ (Note - The last point is to allow implementations to assume that values accessed through
   restrict pointers are not clobbered at any point)
   
 ```
