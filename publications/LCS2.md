@@ -1,6 +1,7 @@
 # Lightning Creations LCS 2 - Procedure for LCS Draft and LCS Document Review
 
 Publication Date: 2019-10-08
+Revised: 2019-11-10
 
 Copyright © 2019 Connor Horman and Lightning Creations. This document may be freely copied and distributed but changing is not allowed, except as explicitly licensed.
 
@@ -71,6 +72,18 @@ The same considerations as with Individual Review shall be made towards any Draf
 Whether or not a Draft or "Final Revision" is accepted, denied, or revisions are requested, is decided by a Majority vote 
 of the LCS Review Committee. 
 In the event of a tie for majority, precedence will be given to Revision Requests, then Denial, then Acceptance. 
+
+Votes for Committee Review shall take place in a timely manner.
+ Votes shall be cast by members of the LCS Review Committee within 7 days following the
+  commencement of Committee Review for an LCS Document or LCS Draft.
+ If a member of the LCS Review Committee fails to cast a vote in this period, without documented reason or intent, 
+ their vote may be disreguarded for counting purposes. 
+ 
+Documentation for the above should under non-exceptional circumstances be provided prior to,
+ or immediately following the commencement of such review. In exceptional circumstances, 
+ documentation may be provided after voting has completed for any LCS Document or "Final Revision". 
+In such circumstances, the vote may be reversed and reopened if the inclusion may have had significant impact.
+
 
 ### §2.3 Review of LCS 1, LCS 2, and all other special LCS Documents
 
