@@ -11,6 +11,11 @@ This document specifies the method in which Binary Files should be encoded,
 This document does not specify the method in which the files are stored, transported, or interpreted, only the encoding. 
 Additionally, this document does not specify the mechanism for which the encoding is produced or consumed. 
 
+An additional purpose of this document is to define a method in which certain binary structures can be unambiguously encoded. 
+ If the content of a file can be represented by a structure,
+  then a file that is structurally equal, will also be equal in representation,
+   ignoring any (potentially valid) bytes which trail the structure. 
+
 ### §1.1 Further Encoding
 
 This document defines the binary representation of files using this encoding. 
