@@ -72,8 +72,8 @@ The content of files produced under this specification can be described as being
  "Little Endian", and "Big Endian". 
  
 The Byte Order Mode refers to the order which multibyte scalar types are written. 
-In Little Endian Byte Order Mode, the least significant byte is written at the lowest byte position in the file, 
- in Big Endian Byte Order Mode, the most significant byte is written at the lowest byte position in the file. 
+In Little Endian Byte Order Mode the bytes are written in increasing order of significance, 
+ in Big Endian Byte Order Mode the bytes are written in decreasing order of significance. 
  
  For example, the `u32` value `0x12345678` is encoded as `[78 56 34 12]` in Little Endian Byte Order Mode,
   and `[12 34 56 78]` in Big Endian Byte Order Mode. 
