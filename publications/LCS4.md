@@ -7,7 +7,7 @@ This document is released under the terms of the GNU Free Documentation License.
 
 ## §1 Purpose of this document
 
-This document specifies the method in which Binary Files should be encoded,
+This document specifies a method in which Binary Files should be encoded,
  as referenced by other LCS Documents. 
 This document does not specify the method in which the files are stored, transported, or interpreted, only the encoding. 
 Additionally, this document does not specify the mechanism for which the encoding is produced or consumed. 
