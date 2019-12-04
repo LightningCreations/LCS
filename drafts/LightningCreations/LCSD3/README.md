@@ -198,6 +198,9 @@ If An Operation A *Observes the Result of* another Operation B, then the followi
 * If B is a Write Operation and A is a Read Operation that applies to the same memory region, and A is not a volatile access, then A will load the value stored by B, unless there exists some Write Operation C, such that C *Observes the result of* B, or C *is an Unreleated Write* to B, and A *Observes the result of * C.
 * Any Observable Side effects of A will have occurred before B.
 
+(This relationship implies that operations cannot be reordered relative to atomic or fence operations, 
+ where one of those operations *observes the result of* the other).
+
 ### §3.4 Unrelated Write To and Negates
 
 An Operation can be said to be an Unrelated Write to some other operation. 
@@ -301,13 +304,28 @@ Additionally, if there is an Atomic Operation C, which is Read Operation, C *fol
 If there is an Acquire Fence FA, which is acquired by an Atomic Operation A, and a Release Fence FR,
  which is released by an Atomic Operation R, and A *observes the result of* R, then FA *observes the result of* FR. 
 
-### §3.9 Is Computed From
+### §3.9 Synchronous Operations
+
+Synchronous Operations are operations which provide barriers for atomic operations. 
+
+If a Synchronous Operation A *follows* an atomic operation B, then A *observes the result of* B.
+If B *follows* A, then B *observes the result of* A. 
+
+If a Synchronous Operation A *follows* another Synchronous Operation B, 
+ then A *observes the result of* B, and if there exists an Atomic Operation C, such that
+ C *follows* B, and A *follows* C, then A and B are said to guard C. 
+ If there exists an operation D such that B *follows* D, and C *observes the result of* D, 
+ then B *observes the result of* D.
+ If instead D *follows* A and D *observes the result of* C, then D *observes the result of* A.
+
+### §3.10 Is Computed From
 
 An Operation A *is computed from* B, if:
 * A is a Computation, B is a Read Operation and the value loaded by B is an operand in A
 * Both A and B are computations, and the result of B is an operand in A
 * A is a Write Operation, and B is a Read Operation, and the value loaded by B is the value stored by A
 * A is a Write Operation, B is a Computation, and the result of B is the value stored by A
+* There exists some operation C such that A *is computed from* C, and C *is computed from* B
 
 ## §4 Types
 
@@ -584,7 +602,7 @@ If the fully parsed entity is not valid, it fails the grammar parse.
 
 
 ##### §4.7.1 C++ Function Types
-_This section is non-normative. It does not define a construct of this specification, and is for informative purposes only_
+_This section is non-normative. It does not define a construct of this specification, and is for informative purposes only as a recommended practice of the specification_
 
 The type qualifiers `_C` and `_K` correspond to C++ member function qualifiers const and volatile. 
 Additionally,
