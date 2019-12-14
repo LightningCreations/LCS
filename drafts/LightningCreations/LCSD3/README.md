@@ -100,6 +100,11 @@ If the source character set is not US-ASCII,
 There is a different charset, called the execution charset, which is only used for generation of string literals. 
 The execution charset shall contain all characters the Source Charset contains, and an Implementation-Defined Null character. 
 
+There is an additional charset, called the extended execution charset, which is used for the generation of wide string literals.
+The extended execution charset shall contain all characters the Execution Charset contains,
+ but not necessarily in the same representation. 
+Multiple code points may represent a single character in the extended execution charset.
+ The null character shall be a single code point.
 
 ### §2.3 LCIR Compound Syntax
 
@@ -115,14 +120,32 @@ INTEGER = ["-" / "+"] (DECINTEGER / "0x" HEXINTEGER)
 FLOAT = (DECINTEGER ["." DECINTEGER] ["e" INTEGER] 
 IDENT = (ALPHA / "$" / "_") *(ALPHA / DIGIT / "$" / "_").
 ESCSEQ = "\" ("x" HEXINTEGER \ DECINTEGER \ "n" \ "t" \ "r" \ <"> \ "\" \ "e" \ "'")
+UNICODEESC = "\u" HEXINTEGER
 STRING = <">*( CHAR \ ESCSEQ)<">
+WIDESTRING = L<">*(CHAR \ ESCSEQ \ UNICODEESC )
+UNICODESTRING = (u8 \ u \ U) <">*(CHAR \ ESCSEQ \ UNICODEESC) <">
 LITCHAR = "'"(CHAR \ ESCSEQ) "'"
+WIDECHAR = L"'" (CHAR \ ESCSEQ \ UNICODEESC ) "'"
+UNICODECHAR = (u \ U) "'" (CHAR \ ESCSEQ \ UNICODEESC ) "'"
+BOOLEANLITERAL = "true" \ "false"
 POWEROFTWO = DECINTEGER
 ```
 
 
-When Parsing Numerical Escapes, the character shall be interpreted according to the execution charset, except that 
-the escape sequence `\0` shall always parse as the Nul Character. 
+When Parsing Numerical Escapes,
+ the character shall be interpreted according to the execution charset for normal strings and character literals,
+ according to the extended execution charset for wide string and character literals,
+ and according to the unicode character set for unicode string and character literals,
+ except that the escape sequence `\0` shall always parse as the Nul Character. 
+ If a character in a unicode string or unicode character literal cannot be represented as a valid unicode character or surrogate pair,
+  the program is ill-formed. 
+ If a character in a unicode character literal cannot be represented as a single code point in the encoding,
+  the program is ill-formed (for example, if it requires a surrogate pair).
+ 
+ If a character in a unicode escape in a Wide String or Wide Character literal cannot be represented
+  as a character in the extended execution charset or a sequence of characters,
+  the file is ill-formed (only a single character may appear in a Wide Character Literal).
+ 
 
 POWEROFTWO only parses numbers which are a power of two. 
 
@@ -223,9 +246,10 @@ If A *Negates* B, then B can be elided by the implementation, as the value writt
 A Memory Region is any region designated by a given memory address, which is consumed by the value of:
 * A scalar Type (See §4.1 Scalar Types)
 * A Pointer Type, possibly restrict qualified (See §4.3 Pointer Types)
-* The value part of an Atomic Type (See §4.6 Atomic Types)
 * A vector type (See §4.4 Vector Types), where the component type of the vector is one of the above, or
+* The value part of an Atomic Type of any (See §4.6 Atomic Types)
 * A cv-qualified (See §4.2 Qualified Types) version of any of the above
+Collectively, the above types are called singular types. 
 
 Or any memory address that is being consumed by a structure type for padding, or the lock portion of an Atomic Type (See §4.6),
  when that memory address is examined as an array of u8. 
@@ -728,7 +752,7 @@ A structure type consists of a series of members, each member having a type and 
 A member takes the form `<type> <name>[:<bitfield length>]`, and there can be any number of members. 
  Each member is separated by a comma. 
 Additionally, a member may be unnamed, if and only if it is a bitfield member with length 0. 
- Such members must always be unnamed. 
+ Such bitfield members must always be unnamed. 
 The type of each member must be complete. 
  
 A structure type shall have an unspecified size such that each memory region consumed by any member is distinct
@@ -863,7 +887,7 @@ If a symbol which has an aggregate initializer is not of a structure, union, arr
  
 ```
 linkagespec = "extern" / "static" / "weak"
-initializer = <STRING> / <LITCHAR> / <INT> / <FLOAT> / "{"*<WS> "}" / <aggregateinitializer>
+initializer = <STRING> / <WIDESTRING> / <UNICODESTRING> / <LITCHAR> / <WIDECHAR> / <UNICODECHAR> / <INT> / <FLOAT> / "{"*<WS> "}" / <aggregateinitializer>
 symbol = [<linkagespec> <WS>] <type> <WS> IDENT *<WS> ["=" *<WS> <initializer>]
 ```
 
@@ -886,7 +910,7 @@ aggregateinitializer = "{" *<WS> <initializer> *<WS> *(","*<WS> <initializer> *<
 
 #### §5.6.2 External Symbol Declaration
 
-A symbol declaration with the linkage specifier "extern" that does not have an initializer.
+A symbol declaration with the linkage specifier "extern" that does not have an initializer is called an External Symbol Declaration.
  Such a Symbol Declaration has special standing. 
  
 An External Symbol Declaration is not zero-initialized,
@@ -894,6 +918,9 @@ An External Symbol Declaration is not zero-initialized,
  
 Additionally, external symbol declarations may have an incomplete structure or union type or be an array of an unknown bound. 
  (Note - void is still not a valid type for an external symbol declaration).
+
+If a symbol declaration uses the linkage specifier "extern" and has an initializer,
+ it is not an external symbol declaration. Rather it is a regular symbol declaration that has external linkage. 
 
 ### §5.7 Function Declaration
  
@@ -906,8 +933,23 @@ The value of such local before it is first written to is indeterminate.
 If an indeterminate value of any type other than `u8` is loaded by a Read Operation, the behavior is undefined. 
 If a Computation is applied to an indeterminate value of any type other than `u8`, the behavior is undefined. 
 
+(An indeterminate value is unspecified, however it may be a "Trap Representation" and loading such a value may cause an error
+ at runtime, such as a Signalling NaN value, or a Not a Thing Integer value. 
+ This is outside the scope of the specification, except that values of type `u8` and `i8` may have no such Trap Representation).
+ 
+ 
 The implementation shall provide storage for all local variables of a volatile qualified type. 
 It is unspecified how this storage is provided. 
+It is unspecified if storage is provided for local variables of any other type. 
+If storage is provided for a local variable,
+ it may not overlap the storage for any other local variable in the same function,
+ unless both local variables are not of a volatile qualified type,
+ and at any point where one local variable has a non-indeterminate value,
+ the other has an indeterminate value. 
+
+
+Functions may be accompanied by a convention code. These are described in §4.7. 
+If no convention code is provided, the convention used is implementation-defined. 
 
 ```
 label = <typename> ":"
@@ -946,13 +988,16 @@ Psuedo-instructions are prefixed with `.`
 #### §6.1.1 destroy 
 
 The psuedo-instruction `.destroy <local>` indicates that a local variable is no longer in scope at a point. 
-After `.destroy`, the value of the named local variable is indeterminate.
+After `.destroy`, the value of the named local variable is indeterminate. 
+If destroy is applied to a local variable for which there is a pointer to that local,
+ the behavior of accessing that local through that pointer is undefined, 
+ unless that local has a volatile-qualified type. 
 Local shall name a local variable declared in the function which contains this psuedo-instruction. 
 
 ```
 destroyinsn = ".destroy" <WS> <IDENT>
 instruction = destroyinsn
-``` 
+```
 
 #### §6.1.2 clobber
 
@@ -963,7 +1008,7 @@ The psuedo-instruction `.clobber <local>` indicates that the implementation cann
   
  Local shall name a local variable declared in the function which contains this pseudo-instruction.
  
-If local subjected to a clobber instruction is subsequently accessed through a which
+If local subjected to a clobber instruction is subsequently accessed through a restrict pointer that
  was created by prior to this pseudo-instruction, the behaviour is undefined. 
   
  (Note - The last point is to allow implementations to assume that values accessed through
@@ -973,5 +1018,163 @@ If local subjected to a clobber instruction is subsequently accessed through a w
 clobberinsn = ".clobber" <WS> <IDENT>
 instruction = clobberinsn
 ```
+
+### §6.2 Registers
+
+LCIR has two registers generally accessible by Instructions,
+ a general purpose accumulator and a status register.
+ 
+The General Purpose Accumulator, labeled A, shall be able to store any single memory region. 
+
+The Status Register, labeled S, shall be a bitfield which can store bits corresponding to the following status flags:
+* Z or Zero
+* V or Overflow
+* N or Negative
+* C or Carry
+
+
+These flags are set normally by various computations and load operations.
+Operations may also explicitly set any of these flags.
+
+The type of the value in A is known at all times, except at the beginning of a function that does not return a structure or union type. 
+The value of A may be clobbered (leaving an indeterminate value in A) as the result of the following reason:
+* A load operation or computation which does not explicitly leave the value in A
+* A call to a function which returns void
+* A return operation, where the value in A cannot be converted via REINTERPRET to the type the function returns
+* At the beginning of any function, except a function which returns a structure or union type.
+* After a REINTERPRET instruction, where the bitwise conversion was invalid.
+* After any Machine Specific Operation
+
+### §6.3 Operands
+
+Instructions in LCIR can have 0 or more operands.
+ These operands can an immediate value,
+  symbol or local variable,
+   indirect operand,
+   member of an operand,
+   the address of a symbol or local variable,
+   Index to an array, vector, or pointer,
+   or a register or flag. 
+
+If one or more operands of a Memory Operation has a volatile qualified type, 
+ the operation shall be considered a Volatile Operation.
+
+If one or more operands of a Memory Operation has an atomic type,
+ the operation shall be considered an Atomic Operation. 
+ 
+If a memory region being indirectly accessed has a volatile-qualified type,
+ the behavior is undefined, unless the operation is a Volatile Operation.
+
+If a memory region being indirectly accessed has a const-qualified type,
+ the behavior is undefined if the operation writes to that operand. 
+ 
+If a memory region being indirectly accessed has an atomic type, except a lock free atomic type,
+ the behavior is undefined unless any operand has an atomic type.
+
+#### §6.3.1 Numeric Literals
+
+Numeric Literals without a suffix (the name of a scalar type)
+ are of the smallest integer type which can store the value of the literal (for integer literals),
+ or `f64` (for floating point literals). 
+
+Numeric literals with a suffix are the type indicated by the suffix.
+ If the value of the numeric literal does not fit in the type indicated by the suffix, 
+ `u64` or `i64` for an integer literal without a suffix,
+  or `f64` for a floating-point literal without a suffix, the file is ill-formed.
   
+Numeric literals can only be used in computations and load operations.
+ A Numeric Literal cannot be stored to.
+
+#### §6.3.2 String Literals
+
+String literals are pointers to arrays containing the characters in the string, encoded in a particular character set,
+ and terminated by a null character. These arrays are const-qualified,
+  and are defined as though they are symbols with internal linkage initialized to the elements.
+  Storage shall be provided for all string literals that are used as an operand,
+  it is unspecified how this storage is provided. In particular, this storage may overlap. 
+
+A String Literal with no prefix is of type `*_C<T>`,
+ where `<T>` is an implementation-defined 8-bit wide integral type (may be `i8`, `u8` or another, implementation-defined extension type). 
+The pointer is to the first element of an array `_A<n>_C<T>`, where `<n>` is the length of the string +1. 
+The array shall contain the characters of the string literal encoded in the execution charset,
+ followed by the implementation-defined null character.
+ 
+A Wide String Literal is of type `*_C<L>`,
+ where `<L>` is an implementation-defined integral type of an implementation-defined type.
+The pointer is to the first element of an array `_A<n>_C<T>`, where `<n>` is the number of code points in the string +1.
+The array shall contain the code-points representing the characters in the string, encoded in the extended execution charset,
+ followed by the implementation-defined null character for the extended execution charset. 
+ 
+A unicode string literal is of type `*_Cu16` (when prefixed with `u`) or `*_Cu32` (when prefixed with `U`).
+The pointer is to the first element of an array `_A<n>C<T>`, where `<n>` is the number of unicode code points in the string +1.
+The array shall contain the code-points representing the characters in the string, encoded in UTF-16 (when prefixed with `u`),
+ or UTF-32 (when prefixed with `U`) , followed by the null character, which is character `\u0000`.
+
+#### §6.3.3 Character Literals
+
+Character Literals of any given prefix have the same type as an element of the array pointed to by
+ by the corresponding string literal.
+
+The value of that literal is equal to the representation of that character in the charset for the corresponding string literal. 
+Like numeric literals, they cannot be used as an operand for a store instruction. 
+
+### §6.4 LOAD
+
+Loads the value of an operand to `A`. 
+The operand SHALL have a singular type.
+After this operation the value in `A` SHALL be of the type of the operand, ignoring top level cv-qualifiers or atomic qualifiers,
+ and the value of the operand.
+
+LOAD is a Read Operation of its operand.
+
+```c++
+instruction = "LOAD" <WS> <operand>
+```
+
+### §6.3 STORE
+
+Stores the value in `A` in the operand.
+The operand SHALL be of the same type as the value in `A` ignoring top level cv-qualifiers, or atomic qualifiers, or if `A` has an integer type,
+ `A` is any integer type of the same size (regardless of signedness). 
+
+STORE is a Write Operation to its Operand.
+
+The operand shall be either a symbol, a local variable, a structure or union field, indexing to an array,
+ or an indirection, and shall not have a const-qualified type. 
+
+```c++
+instruction = "STORE" <WS> <operand>
+```
+ 
+### §6.4 REINTERPRET
+
+Performs a representation conversion of the value in `A` to the target type, 
+ and leaves the resulting value in `A`.
+
+The given type shall be a singular type. 
+
+If the type of the value in `A` is the same size as the target type,
+ `A` is not resized. 
+
+If the representation is not a valid value of the target type,
+ the result is an indeterminate value of that type.
+
+If the value in `A` is larger then the target type, `A` is truncated to the size of the type. 
+If the value in `A` is smaller then the target type, then `A` is extended to that size.
+If either the value in `A` or the target type are not integer types,
+ the value of the remaining bits is indeterminate. How those bits participate in the new value is unspecified.
+If both the value in `A` and the target type are integer types,
+ the remaining bits are all zeros, and the value in `A` is zero-extended to the target type (regardless of signedness)..
+
+If the target type is a pointer type, and the type of the value in `A` was not a pointer type,
+ the result is invalid, and does not point to any memory region,
+  unless the value in `A` is a correctly sized integer type, and one of the following is true:
+* The value in `A` was the result of a representation conversion from a value pointer type.
+ The resulting value points to the same memory region as that original pointer,
+* The value in `A` represents an address, at which a memory region begins, and that memory region is occupied storage allocated for a symbol, a string literal, or a volatile qualified local variable.
+ The resulting value points to that memory region. 
+
+The behavior of accessing a memory region through an invalid pointer is undefined. 
+
+(Note that pointers obtained through a REINTERPRET that points to a memory region of a different type may be subject to aliasing rules, as defined in §3.5)
 
