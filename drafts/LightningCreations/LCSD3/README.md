@@ -440,7 +440,7 @@ Types written as `_C<type>` are const qualified types.
  
 #### §4.2.2 Volatile Qualifier
 
-Types written as `_V<type>` are volatile-qualified type. 
+Types written as `_K<type>` are volatile-qualified type. 
 
 A memory region which stores a value of a volatile-qualified scalar type can only be accessed with a volatile operation. 
 If a Memory Operation *applies to* a memory region which stores a value of a volatile-qualified scalar type,
@@ -626,7 +626,7 @@ If the fully parsed entity is not valid, it fails the grammar parse.
 
 
 ##### §4.7.1 C++ Function Types
-_This section is non-normative. It does not define a construct of this specification, and is for informative purposes only as a recommended practice of the specification_
+_This section is non-normative. It does not define a construct of this specification, and is for informative purposes as a recommended practice of the specification_
 
 The type qualifiers `_C` and `_K` correspond to C++ member function qualifiers const and volatile. 
 Additionally,
@@ -693,12 +693,23 @@ The want pragma declaration takes the form `pragma want <extension> <version>`,
  
 It is implementation-defined which standard extensions are provided at which versions. 
 
-If the implementation does not provide the requested standard extension at the requested version, the file is ill-formed. 
+If the implementation does not provide the requested standard extension at the requested version,
+ the file is ill-formed. 
 
 ```
 wantpragma = "pragma" <WS> want" <WS> <IDENT> <WS> <INT>
 pragmadecl = <wantpragma>
 ```
+
+##### §5.1.1.1 Type Extensions
+
+For each of the optional types, there is an standard extension for that type.
+
+The extensions are as follows:
+* int64, available at version 1 if the extended integer types i64 and u64 are provided
+* float128, available at version 1 if the extended floating point type f128 is provided
+* float16, available at version 1 if the extended floating point type f16 is provided
+
 
 #### §5.1.2 Target Pragma
 
@@ -1151,7 +1162,8 @@ instruction = "STORE" <WS> <operand>
 Performs a representation conversion of the value in `A` to the target type, 
  and leaves the resulting value in `A`.
 
-The given type shall be a singular type. 
+The given type shall be a singular type. If the type of the value in `A` (the original type)
+ is the same as the target type, the result is an identity conversion.
 
 If the type of the value in `A` is the same size as the target type,
  `A` is not resized. 
@@ -1164,7 +1176,7 @@ If the value in `A` is smaller then the target type, then `A` is extended to tha
 If either the value in `A` or the target type are not integer types,
  the value of the remaining bits is indeterminate. How those bits participate in the new value is unspecified.
 If both the value in `A` and the target type are integer types,
- the remaining bits are all zeros, and the value in `A` is zero-extended to the target type (regardless of signedness)..
+ the remaining bits are all zeros, and the value in `A` is zero-extended to the target type (regardless of signedness).
 
 If the target type is a pointer type, and the type of the value in `A` was not a pointer type,
  the result is invalid, and does not point to any memory region,
@@ -1174,7 +1186,93 @@ If the target type is a pointer type, and the type of the value in `A` was not a
 * The value in `A` represents an address, at which a memory region begins, and that memory region is occupied storage allocated for a symbol, a string literal, or a volatile qualified local variable.
  The resulting value points to that memory region. 
 
+If both types are pointers, then the result is a pointer to the same memory region as the original value.
+ (This implies that all pointers have the same size)
+
 The behavior of accessing a memory region through an invalid pointer is undefined. 
 
 (Note that pointers obtained through a REINTERPRET that points to a memory region of a different type may be subject to aliasing rules, as defined in §3.5)
+
+If the original type is a scalar type, and the target type is a Vector of the same type,
+ the first component of the resulting vector is the scalar value (other components have an indeterminate value).
+If the target type is a scalar type, and the original type is a vector of the same type,
+ the resulting value is the first component of the vector.
+ 
+If the both types are vectors of the same scalar type, where the original type is of length n,
+ and the target type is of length m, then if m<n, then components of the new vector are the first m components of the original value.
+ If n<m, then the first n components of the new vector are the components of the original value (all other components have an indeterminate value).
+
+If the target type and original type are the same size,
+ then the result of a REINTERPRET back to the original type results in the original value.
+If the target type is wider than the original type,
+ then the result of a REINTERPRET back to the original type results in the original value
+  (notwithstanding the prohibition against computations using an indeterminate value)
+
+If `A` has an indeterminate type,
+ then the conversion shall be performed as though the value in `A` had an unspecified type of the same size.
+
+If `A` has an indeterminate value, and the target type is `u8`, the result is an unspecified value of that type,
+ notwithstanding the prohibition against computations using an indeterminate value.
+
+If any bits which participate in the representation of the result are indeterminate, that value is indeterminate.
+If the pattern of bits in the representation of the result is not a valid representation (including a trap representation) of the target type,
+ the result is an indeterminate value.
+
+REINTERPRET is a computation on A.
+
+
+### §6.5 CONVERT
+
+Converts the value in A to the target type. If the type of the value in `A` (the original type) is the same as the target type,
+ there is no effect. Otherwise:
+
+If the value in `A` is a signed integer type, and the target type is an integer type which is larger than that type,
+ then `A` is sign-extended to the target type.
+If the value in `A` is an unsigned integer type, and the target type is an integer type which is larger than that type,
+ then `A` is zero-extended to the target type.
+If the value in `A` is an integer type, and the target type is an integer type which is smaller than or the same size as that type (except if either are `bool`),
+ then the result is the value of n low order bits where n is the bit size of the integer type (This has the same narrowing behavior as REINTERPERT). 
+
+If the target type is `bool`, and the type of the value in `A` is not `bool`, then depending on the type,
+ it is converted to `bool` as follows:
+* If the original type was a pointer type, then the result is `1` if the pointer points to a memory region, and `0` if it is a null pointer. If the pointer is invalid, the behavior is undefined.
+* If the original type was an integer or floating-point type, then the result is `1` if the original value was non-zero, and `0` otherwise.
+* If the original type was a vector type, the result is `1` if any component is non-zero, and `0` otherwise
+
+If the original type is `bool`, then the value is converted to the integer value `1`, then at most 1 other conversion is performed.
+
+If the target type is a floating point type, and the original type is either an integer type or a floating-point type, then:
+* If the value in `A` can be exactly represented as a value of the type, then the result is that value in the floating point type
+* If the value in `A` can be represented as a value of the type, but cannot be exactly represented,
+ then the result is the value of the floating-point type which is closest to the original value, after rounding in an implementaiton-defined way.
+* If the value in `A` cannot be represented as a value of the type, the result is Positive infinity (if the value is positive), or Negative Infinity (if the value is negative).
+* The integer value `0` is converted to the floating-point value `+0.0`
+
+If the original type is a floating-point type, and the target type is an integer type (other than `bool`), then:
+* If the value in `A` can be exactly represented as a value of the target type, that value is the result
+* If the value in `A` (after discarding the fractional component) can be exactly represented as a value of the target type, that truncated value is used.
+* Otherwise the behavior is undefined (in particular, if `A` is not finite).
+* Both `+0.0` and `-0.0` (after truncation) are converted to the integer value `0`.
+
+If the original type is a scalar type, and the target type is a vector of the same type,
+ then the first element is the value of that scalar, and the remaining elements are initialized to `0` (for vectors of an integer type),
+  or `+0.0` (for vectors of a floating-point type).
+
+If the original type is a scalar type, and the target type is a vector of a different component type,
+ then the scalar value is converted, as above, to the component type of the vector,
+  then that scalar value is converted to the vector type.
+
+If the original type is a vector, and the target type is the same scalar type,
+ then the resulting value is the first element of the vector.
+
+If the original type is a vector, and the target type is a different scalar type,
+ then the vector is converted to its component type, then that value is converted to the scalar type.
+ 
+A pointer type can be converted to *void, as well as to any pointer type with the same pointed-to type,
+ ignoring CV-qualifiers at all levels.
+
+If no conversion sequence exists between the original type and the target type, or the conversion sequence
+ requires a conversion that does not exist, the file is ill-formed.
+
+CVT is a computation on `A`.
 
