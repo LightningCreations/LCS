@@ -896,6 +896,8 @@ If the initializer is not valid for the symbol type, the file is ill-formed.
 If a symbol which has an aggregate initializer is not of a structure, union, array, or vector type,
  a cv-qualified variation, or an atomic or aligned version thereof, the file is ill-formed. 
  
+A symbol may not have the names `_A`, `_S`, `_Z`, `_C`, `_V`, or `_N` (but may start with or contain any of those sequences).
+ 
 ```
 linkagespec = "extern" / "static" / "weak"
 initializer = <STRING> / <WIDESTRING> / <UNICODESTRING> / <LITCHAR> / <WIDECHAR> / <UNICODECHAR> / <INT> / <FLOAT> / "{"*<WS> "}" / <aggregateinitializer>
@@ -943,6 +945,7 @@ Automatic Local Variables shall not have an initializer.
 The value of such local before it is first written to is indeterminate. 
 If an indeterminate value of any type other than `u8` is loaded by a Read Operation, the behavior is undefined. 
 If a Computation is applied to an indeterminate value of any type other than `u8`, the behavior is undefined. 
+local variables shall not have any name which is prohibited for a symbol.
 
 (An indeterminate value is unspecified, however it may be a "Trap Representation" and loading such a value may cause an error
  at runtime, such as a Signalling NaN value, or a Not a Thing Integer value. 
@@ -1063,9 +1066,13 @@ Instructions in LCIR can have 0 or more operands.
   symbol or local variable,
    indirect operand,
    member of an operand,
-   the address of a symbol or local variable,
+   the address of a symbol, local variable, or function,
    Index to an array, vector, or pointer,
-   or a register or flag. 
+   or a register or flag (potentially prefixed by a single underscore). 
+
+If a symbol or local variable has the same name as a register or flag,
+ using the name of that symbol or local variable references that symbol or local variable.
+ (To disambiguate this, register and flag names can be prefixed by a single underscore)
 
 If one or more operands of a Memory Operation has a volatile qualified type, 
  the operation shall be considered a Volatile Operation.
@@ -1220,6 +1227,10 @@ If the pattern of bits in the representation of the result is not a valid repres
 
 REINTERPRET is a computation on A.
 
+```
+insn = REINTERPRET <WS>* <type>
+```
+
 
 ### §6.5 CONVERT
 
@@ -1274,5 +1285,22 @@ A pointer type can be converted to *void, as well as to any pointer type with th
 If no conversion sequence exists between the original type and the target type, or the conversion sequence
  requires a conversion that does not exist, the file is ill-formed.
 
-CVT is a computation on `A`.
+CONVERT is a computation on `A`.
+
+```
+insn = CONVERT <WS>* <type>
+```
+
+### §6.6 ADD
+
+Adds two operands together, leaving the result of the addition in `A`. 
+Both operands shall have the same type, or one shall be a pointer type and the other an integer type. 
+
+If both operands are vectors, the addition is performed component-wise.
+
+If both operands are a signed integer type, and the result cannot be represented as a value of that signed integer type, the behavior is undefined.
+
+
+ 
+
 
