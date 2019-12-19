@@ -1044,7 +1044,6 @@ The Status Register, labeled S, shall be a bitfield which can store bits corresp
 * Z or Zero
 * V or Overflow
 * N or Negative
-* C or Carry
 
 
 These flags are set normally by various computations and load operations.
@@ -1142,6 +1141,10 @@ Loads the value of an operand to `A`.
 The operand SHALL have a singular type.
 After this operation the value in `A` SHALL be of the type of the operand, ignoring top level cv-qualifiers or atomic qualifiers,
  and the value of the operand.
+ 
+If the value loaded is zero the Z flag shall be set (otherwise it shall be cleared). 
+If the value loaded is of a signed integer type or floating-point type, and is negative,
+ the `N` flag is set. 
 
 LOAD is a Read Operation of its operand.
 
@@ -1227,6 +1230,10 @@ If the pattern of bits in the representation of the result is not a valid repres
 
 REINTERPRET is a computation on A.
 
+If the result is zero, the `Z` flag is set.
+If the target type is an signed integer or floating-point type, and the result is negative, the `N` flag is set. (If the value is indeterminate, it is unspecified whether or not the `N` flag is set.)
+If the target type is an integer type, and the conversion was size-narrowing, the `V` flag may be set (it is implementation-defined if this is the case).
+
 ```
 insn = REINTERPRET <WS>* <type>
 ```
@@ -1243,6 +1250,7 @@ If the value in `A` is an unsigned integer type, and the target type is an integ
  then `A` is zero-extended to the target type.
 If the value in `A` is an integer type, and the target type is an integer type which is smaller than or the same size as that type (except if either are `bool`),
  then the result is the value of n low order bits where n is the bit size of the integer type (This has the same narrowing behavior as REINTERPERT). 
+If the original value could not be represented as a value of the target type, the `V` flag is set.
 
 If the target type is `bool`, and the type of the value in `A` is not `bool`, then depending on the type,
  it is converted to `bool` as follows:
@@ -1287,6 +1295,10 @@ If no conversion sequence exists between the original type and the target type, 
 
 CONVERT is a computation on `A`.
 
+If the resulting value is `0` or a null pointer, then the `Z` flag is set.
+If the target is a floating-point type, or a signed integer type, and the resulting value is negative,
+ the `N` flag is set (otherwise, the `N` flag is cleared).
+
 ```
 insn = CONVERT <WS>* <type>
 ```
@@ -1298,9 +1310,23 @@ Both operands shall have the same type, or one shall be a pointer type and the o
 
 If both operands are vectors, the addition is performed component-wise.
 
-If both operands are a signed integer type, and the result cannot be represented as a value of that signed integer type, the behavior is undefined.
+If both operands are a signed integer type, and the result cannot be represented as a value of that signed integer type,
+ the behavior is undefined.
+
+If both operands are an unsigned integer type, the addition is performed modulo 2^n,
+ where n is the size of the unsigned type in bits.
+
+If one operand is a pointer type, it shall not be a pointer to void or pointer to function. 
+If the non-pointer operand has the value `0`, then the result is the pointer operand unaffected. 
+ The `Z` flag is set if the pointer is a null pointer.
+Otherwise, if the non-pointer operand is of a signed integer type, and has a negative value `-n`,
+ the result is the same as if subtracting `n` from that pointer.
+Otherwise, the pointer shall be a pointer value such that by subtracting the same value from it,
+ the original pointer value is returned. If the pointer points to a memory region consumed by an element of an array of the same type
+ as the pointed-to type, that element is not the last element of the array, and there are at least `n` following elements,
+  the pointer points to the nth following element. Otherwise the pointer is invalid and cannot be dereferenced.
 
 
- 
+
 
 
