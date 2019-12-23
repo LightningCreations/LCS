@@ -1305,6 +1305,11 @@ insn = CONVERT <WS>* <type>
 
 ### §6.6 ADD
 
+Form:
+```
+ADD <op1> <op1>
+```
+
 Adds two operands together, leaving the result of the addition in `A`. 
 Both operands shall have the same type, or one shall be a pointer type and the other an integer type. 
 
@@ -1326,7 +1331,11 @@ Otherwise, the pointer shall be a pointer value such that by subtracting the sam
  as the pointed-to type, that element is not the last element of the array, and there are at least `n` following elements,
   the pointer points to the nth following element. Otherwise the pointer is invalid and cannot be dereferenced.
 
+ADD is a computation on its operands. If any operand is not a register, it is a load of that operand.
 
 
+### §6.7 SUB
+
+Subtracts 
 
 
