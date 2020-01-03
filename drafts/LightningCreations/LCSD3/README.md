@@ -1033,6 +1033,18 @@ clobberinsn = ".clobber" <WS> <IDENT>
 instruction = clobberinsn
 ```
 
+#### §6.1.3 unreachable
+
+The psuedo-instruction `.unreachable` indicates a control-flow path that can't be taken. 
+The behavior of code that executes an `.unreachable` psuedo-instruction is undefined. 
+`.unreachable` can be used to indicate that a particular branch can't be taken, 
+ some machine specific code unconditionally jumps away, 
+ or that a function doesn't return.
+
+```
+instruction = ".unreachable"
+```
+
 ### §6.2 Registers
 
 LCIR has two registers generally accessible by Instructions,
