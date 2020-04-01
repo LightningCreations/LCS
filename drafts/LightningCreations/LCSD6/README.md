@@ -10,6 +10,9 @@ with the following Modifications:
 * Within an LCS Draft, only Draft Sections Hold any Meaning. All other sections are useless and are non-normative. 
 * There shall be no normal section that exists in a Draft which does not have a Draft Subsection of that section. 
 
-## D§2 Normative References
+## §2 Normative References
+
 [[LCS 1]](https://lightningcreations.github.io/LCS/publications/LCS1)
 
+### §2.D1 Draft Normative References
+[[LCS 1]](https://lightningcreations.github.io/LCS/publications/LCS1)
