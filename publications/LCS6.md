@@ -1,4 +1,4 @@
-# LCS 5 - Revision for the Policy on Special LCS Documents. 
+# LCS 6 - Revision for the Policy on Special LCS Documents. 
 
 Publication Date: 2020-04-06
 
