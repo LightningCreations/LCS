@@ -7,10 +7,10 @@ Updates and Supersedes: §2.3 of LCS 2 (No other Sections are Superseded or Upda
 ## §1 Special LCS Documents
 
 Special LCS Documents, particularily those that affect the policies in effect for the LCS Project, 
- shall be subject, by a self-contained clause, to annual committee review as described in LCS 2 §2.3. 
- This special review shall continue to occur as described in the clause and in LCS 2 §2.3. 
+ shall be subject, by a self-contained clause, to annual committee review. 
  Additionally, any LCS Review Committee Member may, with cause, request a review of such an LCS Document at any time. 
- The review shall be conducted using the same annual review process as described in LCS 2 §2.3. 
+ The review shall be subjected to the current procedure for committee review.
+ An existing LCS Document shall not be rejected by the LCS Review Committee. 
  
  LCS Review Committee Members shall be required to refrain from using this process for any reason which is deemed,
   by policy or by precedent, to have insufficient cause to begin a review. 
@@ -23,8 +23,8 @@ Special LCS Documents, particularily those that affect the policies in effect fo
  
 ## §2 Status of this Publication
 
-This publication is a Special LCS Document as Described in LCS 2 §2.3. It shall be subject to annual committee review
- as described in that section. Additionally, any member of the LCS Review Committee may, with cause, 
+This publication is a Special LCS Document as described herein. It shall be subject to annual committee review
+ as described. Additionally, any member of the LCS Review Committee may, with valid cause, 
  request that this document be reviewed under the same process. 
  
  
