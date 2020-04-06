@@ -12,7 +12,8 @@ Special LCS Documents, particularily those that affect the policies in effect fo
  Additionally, any LCS Review Committee Member may, with cause, request a review of such an LCS Document at any time. 
  The review shall be conducted using the same annual review process as described in LCS 2 §2.3. 
  
- LCS Review Committee Members shall be required to refrain from using this process for no reason. 
+ LCS Review Committee Members shall be required to refrain from using this process for any reason which is deemed,
+  by policy or by precedent, to have insufficient cause to begin a review. 
  A majority vote from the LCS Review Committee may also cancel review as requested. 
  
  For clarity, any special LCS Document revised or published following the publication of this LCS Document,
