@@ -17,3 +17,4 @@ The following persons have been appointed as members of the LCS Review Committee
 * Matthew Johnson
 * Maelen Kibler
 * Ray Redondo
+* Brinna Whorton
